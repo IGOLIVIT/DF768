@@ -6,10 +6,11 @@
 import SwiftUI
 
 struct TrailsView: View {
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.presentationMode) private var presentationMode
     @StateObject private var gameManager = GameManager.shared
     @State private var selectedTrail: TrailType?
     @State private var isAnimating = false
+    @State private var navigateToTrail = false
     
     var body: some View {
         ZStack {
@@ -21,7 +22,7 @@ struct TrailsView: View {
                 VStack(spacing: 24) {
                     // Header
                     HStack {
-                        Button(action: { dismiss() }) {
+                        Button(action: { presentationMode.wrappedValue.dismiss() }) {
                             HStack(spacing: 8) {
                                 Image(systemName: "chevron.left")
                                     .font(.system(size: 16, weight: .semibold))
@@ -71,13 +72,14 @@ struct TrailsView: View {
                     // Trails list
                     VStack(spacing: 20) {
                         ForEach(Array(TrailType.allCases.enumerated()), id: \.element.id) { index, trail in
-                            TrailCard(
-                                trail: trail,
-                                completedLevels: gameManager.getCompletedLevelsCount(for: trail),
-                                index: index
-                            ) {
-                                selectedTrail = trail
+                            NavigationLink(destination: TrailDetailView(trail: trail)) {
+                                TrailCardContent(
+                                    trail: trail,
+                                    completedLevels: gameManager.getCompletedLevelsCount(for: trail),
+                                    index: index
+                                )
                             }
+                            .buttonStyle(TrailCardButtonStyle())
                             .opacity(isAnimating ? 1 : 0)
                             .offset(y: isAnimating ? 0 : 30)
                             .animation(.spring(response: 0.5, dampingFraction: 0.7).delay(Double(index) * 0.1), value: isAnimating)
@@ -92,12 +94,8 @@ struct TrailsView: View {
                 .frame(maxWidth: .infinity)
                 .contentShape(Rectangle())
             }
-            .scrollBounceBehavior(.basedOnSize)
         }
         .navigationBarHidden(true)
-        .navigationDestination(item: $selectedTrail) { trail in
-            TrailDetailView(trail: trail)
-        }
         .onAppear {
             withAnimation {
                 isAnimating = true
@@ -106,12 +104,11 @@ struct TrailsView: View {
     }
 }
 
-// MARK: - Trail Card
-struct TrailCard: View {
+// MARK: - Trail Card Content
+struct TrailCardContent: View {
     let trail: TrailType
     let completedLevels: Int
     let index: Int
-    let action: () -> Void
     
     private var accentColor: Color {
         switch index {
@@ -130,90 +127,87 @@ struct TrailCard: View {
     }
     
     var body: some View {
-        Button(action: action) {
-            VStack(alignment: .leading, spacing: 16) {
-                HStack(alignment: .top) {
-                    // Icon
-                    ZStack {
-                        Circle()
-                            .fill(accentColor.opacity(0.2))
-                            .frame(width: 60, height: 60)
-                        
-                        Image(systemName: trail.icon)
-                            .font(.system(size: 26, weight: .medium))
-                            .foregroundColor(accentColor)
-                    }
-                    .glowEffect(color: accentColor, radius: 8)
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .top) {
+                // Icon
+                ZStack {
+                    Circle()
+                        .fill(accentColor.opacity(0.2))
+                        .frame(width: 60, height: 60)
                     
-                    Spacer()
-                    
-                    // Progress indicator
-                    VStack(alignment: .trailing, spacing: 4) {
-                        Text("\(completedLevels)/\(trail.levelCount * 3)")
-                            .font(.system(size: 14, weight: .bold, design: .rounded))
-                            .foregroundColor(accentColor)
-                        
-                        Text("completed")
-                            .font(.system(size: 11, weight: .medium, design: .rounded))
-                            .foregroundColor(.textPrimary.opacity(0.5))
-                    }
+                    Image(systemName: trail.icon)
+                        .font(.system(size: 26, weight: .medium))
+                        .foregroundColor(accentColor)
                 }
+                .glowEffect(color: accentColor, radius: 8)
                 
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(trail.rawValue)
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
-                        .foregroundColor(.textPrimary)
+                Spacer()
+                
+                // Progress indicator
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("\(completedLevels)/\(trail.levelCount * 3)")
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundColor(accentColor)
                     
-                    Text(trail.description)
-                        .font(.system(size: 14, weight: .regular, design: .rounded))
-                        .foregroundColor(.textPrimary.opacity(0.7))
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                
-                // Progress bar
-                TrailProgressBar(
-                    completedLevels: completedLevels,
-                    totalLevels: trail.levelCount * 3,
-                    accentColor: accentColor
-                )
-                
-                // Enter button
-                HStack {
-                    Spacer()
-                    
-                    HStack(spacing: 8) {
-                        Text("Enter Trail")
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 12, weight: .semibold))
-                    }
-                    .foregroundColor(accentColor)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(
-                        Capsule()
-                            .fill(accentColor.opacity(0.15))
-                    )
+                    Text("completed")
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .foregroundColor(.textPrimary.opacity(0.5))
                 }
             }
-            .padding(20)
-            .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(
-                        LinearGradient(
-                            colors: gradientColors,
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 20)
-                            .stroke(accentColor.opacity(0.3), lineWidth: 1)
-                    )
+            
+            VStack(alignment: .leading, spacing: 8) {
+                Text(trail.rawValue)
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .foregroundColor(.textPrimary)
+                
+                Text(trail.description)
+                    .font(.system(size: 14, weight: .regular, design: .rounded))
+                    .foregroundColor(.textPrimary.opacity(0.7))
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            
+            // Progress bar
+            TrailProgressBar(
+                completedLevels: completedLevels,
+                totalLevels: trail.levelCount * 3,
+                accentColor: accentColor
             )
+            
+            // Enter button
+            HStack {
+                Spacer()
+                
+                HStack(spacing: 8) {
+                    Text("Enter Trail")
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 12, weight: .semibold))
+                }
+                .foregroundColor(accentColor)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(
+                    Capsule()
+                        .fill(accentColor.opacity(0.15))
+                )
+            }
         }
-        .buttonStyle(TrailCardButtonStyle())
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(
+                    LinearGradient(
+                        colors: gradientColors,
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(accentColor.opacity(0.3), lineWidth: 1)
+                )
+        )
     }
 }
 
@@ -257,11 +251,12 @@ struct TrailCardButtonStyle: ButtonStyle {
 struct TrailDetailView: View {
     let trail: TrailType
     
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.presentationMode) private var presentationMode
     @StateObject private var gameManager = GameManager.shared
     @State private var selectedDifficulty: Difficulty = .easy
-    @State private var selectedLevel: Int?
+    @State private var selectedLevel: Int? = nil
     @State private var isAnimating = false
+    @State private var navigateToGame = false
     
     private var accentColor: Color {
         switch trail {
@@ -281,7 +276,7 @@ struct TrailDetailView: View {
                 VStack(spacing: 24) {
                     // Header
                     HStack {
-                        Button(action: { dismiss() }) {
+                        Button(action: { presentationMode.wrappedValue.dismiss() }) {
                             HStack(spacing: 8) {
                                 Image(systemName: "chevron.left")
                                     .font(.system(size: 16, weight: .semibold))
@@ -369,15 +364,29 @@ struct TrailDetailView: View {
                                     accentColor: accentColor
                                 ) {
                                     selectedLevel = level
+                                    navigateToGame = true
                                 }
                                 .opacity(isAnimating ? 1 : 0)
                                 .scaleEffect(isAnimating ? 1 : 0.8)
-                                .animation(.spring(response: 0.4).delay(Double(level) * 0.1), value: isAnimating)
+                                .animation(.spring(response: 0.4).delay(Double(level) * 0.05), value: isAnimating)
                             }
                         }
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 20)
+                    
+                    // Hidden NavigationLink
+                    NavigationLink(
+                        destination: Group {
+                            if let level = selectedLevel {
+                                GameView(trail: trail, level: level, difficulty: selectedDifficulty)
+                            }
+                        },
+                        isActive: $navigateToGame
+                    ) {
+                        EmptyView()
+                    }
+                    .hidden()
                     
                     Spacer()
                         .frame(height: 40)
@@ -385,12 +394,8 @@ struct TrailDetailView: View {
                 .frame(maxWidth: .infinity)
                 .contentShape(Rectangle())
             }
-            .scrollBounceBehavior(.basedOnSize)
         }
         .navigationBarHidden(true)
-        .navigationDestination(item: $selectedLevel) { level in
-            GameView(trail: trail, level: level, difficulty: selectedDifficulty)
-        }
         .onAppear {
             withAnimation {
                 isAnimating = true
@@ -535,8 +540,7 @@ struct TrailBackground: View {
 }
 
 #Preview {
-    NavigationStack {
+    NavigationView {
         TrailsView()
     }
 }
-

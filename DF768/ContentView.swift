@@ -91,13 +91,7 @@ struct SplashView: View {
                     // Icon
                     Image(systemName: "waveform.path.ecg")
                         .font(.system(size: 40, weight: .light))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [Color.primaryAccent, Color.secondaryAccent],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
+                        .foregroundColor(.primaryAccent)
                         .glowEffect(color: .primaryAccent, radius: 15)
                 }
                 .scaleEffect(isAnimating ? 1 : 0.8)

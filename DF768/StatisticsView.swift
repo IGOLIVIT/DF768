@@ -6,7 +6,7 @@
 import SwiftUI
 
 struct StatisticsView: View {
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.presentationMode) private var presentationMode
     @StateObject private var gameManager = GameManager.shared
     @State private var isAnimating = false
     
@@ -14,12 +14,13 @@ struct StatisticsView: View {
         ZStack {
             // Background
             AnimatedMenuBackground()
+                .allowsHitTesting(false)
             
-            ScrollView {
+            ScrollView(showsIndicators: false) {
                 VStack(spacing: 24) {
                     // Header
                     HStack {
-                        Button(action: { dismiss() }) {
+                        Button(action: { presentationMode.wrappedValue.dismiss() }) {
                             HStack(spacing: 8) {
                                 Image(systemName: "chevron.left")
                                     .font(.system(size: 16, weight: .semibold))

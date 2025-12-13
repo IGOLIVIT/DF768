@@ -367,7 +367,7 @@ struct PulseNodeView: View {
                 startPulsing()
             }
         }
-        .onChange(of: isActive) { _, newValue in
+        .onChange(of: isActive) { newValue in
             if newValue {
                 startPulsing()
             } else {

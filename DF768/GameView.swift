@@ -10,7 +10,7 @@ struct GameView: View {
     let level: Int
     let difficulty: Difficulty
     
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.presentationMode) private var presentationMode
     @StateObject private var gameManager = GameManager.shared
     @State private var showingPauseMenu = false
     @State private var gameCompleted = false
@@ -61,7 +61,7 @@ struct GameView: View {
                         showingPauseMenu = false
                     },
                     onQuit: {
-                        dismiss()
+                        presentationMode.wrappedValue.dismiss()
                     }
                 )
             }
@@ -99,7 +99,7 @@ struct GameView: View {
                 score: score
             )
         }
-        dismiss()
+        presentationMode.wrappedValue.dismiss()
     }
     
     private func calculateFragments(score: Int) -> Int {
@@ -179,4 +179,5 @@ struct PauseMenuView: View {
 #Preview {
     GameView(trail: .shiftingPathways, level: 1, difficulty: .easy)
 }
+
 

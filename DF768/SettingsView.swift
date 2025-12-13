@@ -6,7 +6,7 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.presentationMode) private var presentationMode
     @StateObject private var gameManager = GameManager.shared
     @State private var showResetConfirmation = false
     @State private var showStatistics = false
@@ -17,12 +17,13 @@ struct SettingsView: View {
         ZStack {
             // Background
             AnimatedMenuBackground()
+                .allowsHitTesting(false)
             
-            ScrollView {
+            ScrollView(showsIndicators: false) {
                 VStack(spacing: 24) {
                     // Header
                     HStack {
-                        Button(action: { dismiss() }) {
+                        Button(action: { presentationMode.wrappedValue.dismiss() }) {
                             HStack(spacing: 8) {
                                 Image(systemName: "chevron.left")
                                     .font(.system(size: 16, weight: .semibold))
@@ -52,14 +53,15 @@ struct SettingsView: View {
                     // Settings options
                     VStack(spacing: 16) {
                         // View Statistics
-                        SettingsButton(
-                            icon: "chart.bar.fill",
-                            title: "View Statistics",
-                            subtitle: "Check your progress and achievements",
-                            color: .secondaryAccent
-                        ) {
-                            showStatistics = true
+                        NavigationLink(destination: StatisticsView()) {
+                            SettingsButtonContent(
+                                icon: "chart.bar.fill",
+                                title: "View Statistics",
+                                subtitle: "Check your progress and achievements",
+                                color: .secondaryAccent
+                            )
                         }
+                        .buttonStyle(PlainButtonStyle())
                         .opacity(isAnimating ? 1 : 0)
                         .offset(y: isAnimating ? 0 : 20)
                         .animation(.spring(response: 0.5).delay(0.1), value: isAnimating)
@@ -147,9 +149,6 @@ struct SettingsView: View {
             }
         }
         .navigationBarHidden(true)
-        .navigationDestination(isPresented: $showStatistics) {
-            StatisticsView()
-        }
         .onAppear {
             withAnimation {
                 isAnimating = true
@@ -174,6 +173,57 @@ struct SettingsView: View {
 }
 
 // MARK: - Settings Button
+// MARK: - Settings Button Content
+struct SettingsButtonContent: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+    let color: Color
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            // Icon
+            ZStack {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(color.opacity(0.2))
+                    .frame(width: 50, height: 50)
+                
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundColor(color)
+            }
+            
+            // Text
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .foregroundColor(.textPrimary)
+                
+                Text(subtitle)
+                    .font(.system(size: 13, weight: .regular, design: .rounded))
+                    .foregroundColor(.textPrimary.opacity(0.6))
+                    .lineLimit(2)
+            }
+            
+            Spacer()
+            
+            Image(systemName: "chevron.right")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(color.opacity(0.6))
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.primaryBackground.opacity(0.6))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(color.opacity(0.2), lineWidth: 1)
+                )
+        )
+    }
+}
+
+// MARK: - Settings Button
 struct SettingsButton: View {
     let icon: String
     let title: String
@@ -181,58 +231,25 @@ struct SettingsButton: View {
     let color: Color
     let action: () -> Void
     
-    @State private var isPressed = false
-    
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 16) {
-                // Icon
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(color.opacity(0.2))
-                        .frame(width: 50, height: 50)
-                    
-                    Image(systemName: icon)
-                        .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(color)
-                }
-                
-                // Text
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.system(size: 17, weight: .semibold, design: .rounded))
-                        .foregroundColor(.textPrimary)
-                    
-                    Text(subtitle)
-                        .font(.system(size: 13, weight: .regular, design: .rounded))
-                        .foregroundColor(.textPrimary.opacity(0.6))
-                        .lineLimit(2)
-                }
-                
-                Spacer()
-                
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(color.opacity(0.6))
-            }
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.primaryBackground.opacity(0.6))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(color.opacity(0.2), lineWidth: 1)
-                    )
+            SettingsButtonContent(
+                icon: icon,
+                title: title,
+                subtitle: subtitle,
+                color: color
             )
-            .scaleEffect(isPressed ? 0.98 : 1.0)
-            .animation(.spring(response: 0.2), value: isPressed)
         }
-        .buttonStyle(PlainButtonStyle())
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in isPressed = true }
-                .onEnded { _ in isPressed = false }
-        )
+        .buttonStyle(SettingsButtonStyle())
+    }
+}
+
+// MARK: - Settings Button Style
+struct SettingsButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+            .animation(.spring(response: 0.2), value: configuration.isPressed)
     }
 }
 
@@ -385,4 +402,5 @@ struct ResetCompleteNotification: View {
 #Preview {
     SettingsView()
 }
+
 
