@@ -1,31 +1,30 @@
 //
-//  GameView.swift
+//  GamePlayView.swift
 //  DF768
 //
 
 import SwiftUI
 
-struct GameView: View {
-    let trail: TrailType
+struct GamePlayView: View {
+    let gameType: GameType
     let level: Int
     let difficulty: Difficulty
     
     @Environment(\.presentationMode) private var presentationMode
     @ObservedObject private var gameManager = GameManager.shared
     @State private var showingPauseMenu = false
-    @State private var gameCompleted = false
     
     private var accentColor: Color {
-        switch trail {
-        case .shiftingPathways: return .primaryAccent
-        case .pulseOfReflections: return .secondaryAccent
-        case .fallingEchoLines: return Color(red: 0.6, green: 0.5, blue: 1.0)
+        switch gameType {
+        case .pathDrop: return .brightCyan
+        case .signalSplit: return .softMint
+        case .orbitControl: return Color(red: 0.5, green: 0.7, blue: 1.0)
         }
     }
     
     var body: some View {
         ZStack {
-            // Game content based on trail type
+            // Game content based on game type
             gameContent
             
             // Pause button overlay
@@ -36,7 +35,7 @@ struct GameView: View {
                     }) {
                         ZStack {
                             Circle()
-                                .fill(Color.primaryBackground.opacity(0.8))
+                                .fill(Color.darkSlate.opacity(0.9))
                                 .frame(width: 44, height: 44)
                             
                             Image(systemName: "pause.fill")
@@ -71,42 +70,42 @@ struct GameView: View {
     
     @ViewBuilder
     private var gameContent: some View {
-        switch trail {
-        case .shiftingPathways:
-            ShiftingPathwaysGame(level: level, difficulty: difficulty) { success, score, timeSpent in
-                handleGameComplete(success: success, score: score, timeSpent: timeSpent)
+        switch gameType {
+        case .pathDrop:
+            PathDropGame(level: level, difficulty: difficulty) { success, score, accuracy, timeSpent in
+                handleGameComplete(success: success, score: score, accuracy: accuracy, timeSpent: timeSpent)
             }
-        case .pulseOfReflections:
-            PulseOfReflectionsGame(level: level, difficulty: difficulty) { success, score, timeSpent in
-                handleGameComplete(success: success, score: score, timeSpent: timeSpent)
+        case .signalSplit:
+            SignalSplitGame(level: level, difficulty: difficulty) { success, score, accuracy, timeSpent in
+                handleGameComplete(success: success, score: score, accuracy: accuracy, timeSpent: timeSpent)
             }
-        case .fallingEchoLines:
-            FallingEchoLinesGame(level: level, difficulty: difficulty) { success, score, timeSpent in
-                handleGameComplete(success: success, score: score, timeSpent: timeSpent)
+        case .orbitControl:
+            OrbitControlGame(level: level, difficulty: difficulty) { success, score, accuracy, timeSpent in
+                handleGameComplete(success: success, score: score, accuracy: accuracy, timeSpent: timeSpent)
             }
         }
     }
     
-    private func handleGameComplete(success: Bool, score: Int, timeSpent: TimeInterval) {
+    private func handleGameComplete(success: Bool, score: Int, accuracy: Double, timeSpent: TimeInterval) {
         if success {
-            let fragments = calculateFragments(score: score)
+            let rewards = calculateRewards(score: score)
             gameManager.completeLevel(
-                trail: trail,
+                gameType: gameType,
                 level: level,
                 difficulty: difficulty,
-                fragments: fragments,
-                timeSpent: timeSpent,
-                score: score
+                rewards: rewards,
+                accuracy: accuracy,
+                timeSpent: timeSpent
             )
         }
         presentationMode.wrappedValue.dismiss()
     }
     
-    private func calculateFragments(score: Int) -> Int {
-        let baseFragments = 5
-        let difficultyBonus = difficulty == .hard ? 10 : (difficulty == .normal ? 5 : 0)
-        let scoreBonus = score / 50
-        return baseFragments + difficultyBonus + scoreBonus
+    private func calculateRewards(score: Int) -> Int {
+        let baseRewards = 5
+        let difficultyBonus = difficulty.rewardMultiplier * 3
+        let scoreBonus = score / 40
+        return baseRewards + difficultyBonus + scoreBonus
     }
 }
 
@@ -120,8 +119,7 @@ struct PauseMenuView: View {
     
     var body: some View {
         ZStack {
-            // Backdrop
-            Color.primaryBackground.opacity(0.95)
+            Color.deepMidnightBlue.opacity(0.95)
                 .ignoresSafeArea()
             
             VStack(spacing: 30) {
@@ -145,7 +143,7 @@ struct PauseMenuView: View {
                     .opacity(isAnimating ? 1 : 0)
                     .animation(.easeOut.delay(0.1), value: isAnimating)
                 
-                VStack(spacing: 16) {
+                VStack(spacing: 14) {
                     Button(action: onResume) {
                         HStack {
                             Image(systemName: "play.fill")
@@ -157,7 +155,7 @@ struct PauseMenuView: View {
                     Button(action: onQuit) {
                         HStack {
                             Image(systemName: "xmark")
-                            Text("Quit Trail")
+                            Text("Quit Challenge")
                         }
                         .secondaryButtonStyle()
                     }
@@ -169,15 +167,12 @@ struct PauseMenuView: View {
             }
         }
         .onAppear {
-            withAnimation {
-                isAnimating = true
-            }
+            withAnimation { isAnimating = true }
         }
     }
 }
 
 #Preview {
-    GameView(trail: .shiftingPathways, level: 1, difficulty: .easy)
+    GamePlayView(gameType: .pathDrop, level: 1, difficulty: .calm)
 }
-
 

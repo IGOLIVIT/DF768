@@ -6,83 +6,100 @@
 import SwiftUI
 import Combine
 
-// MARK: - Difficulty Enum
+// MARK: - Difficulty
 enum Difficulty: String, CaseIterable, Codable {
-    case easy = "Easy"
-    case normal = "Normal"
-    case hard = "Hard"
+    case calm = "Calm"
+    case focused = "Focused"
+    case intense = "Intense"
     
     var speedMultiplier: Double {
         switch self {
-        case .easy: return 1.0
-        case .normal: return 1.5
-        case .hard: return 2.0
+        case .calm: return 1.0
+        case .focused: return 1.4
+        case .intense: return 1.8
         }
     }
     
-    var countMultiplier: Int {
+    var rewardMultiplier: Int {
         switch self {
-        case .easy: return 1
-        case .normal: return 2
-        case .hard: return 3
+        case .calm: return 1
+        case .focused: return 2
+        case .intense: return 3
         }
     }
 }
 
-// MARK: - Trail Type
-enum TrailType: String, CaseIterable, Codable, Identifiable {
-    case shiftingPathways = "Shifting Pathways"
-    case pulseOfReflections = "Pulse of Reflections"
-    case fallingEchoLines = "Falling Echo Lines"
+// MARK: - Game Type
+enum GameType: String, CaseIterable, Codable, Identifiable {
+    case pathDrop = "Path Drop"
+    case signalSplit = "Signal Split"
+    case orbitControl = "Orbit Control"
     
     var id: String { rawValue }
     
     var icon: String {
         switch self {
-        case .shiftingPathways: return "square.grid.3x3"
-        case .pulseOfReflections: return "waveform.path"
-        case .fallingEchoLines: return "arrow.down.to.line"
+        case .pathDrop: return "arrow.down.forward.and.arrow.up.backward"
+        case .signalSplit: return "point.topleft.down.to.point.bottomright.curvepath"
+        case .orbitControl: return "circle.dotted"
         }
     }
     
     var description: String {
         switch self {
-        case .shiftingPathways: return "Tap the shifting targets before time runs out"
-        case .pulseOfReflections: return "Follow the pulsing light patterns"
-        case .fallingEchoLines: return "Match the falling lines at the right moment"
+        case .pathDrop: return "Guide falling objects through obstacles"
+        case .signalSplit: return "Split signals with precise timing"
+        case .orbitControl: return "Release orbiting elements at the right moment"
         }
     }
     
-    var levelCount: Int { 10 }
+    var rewardName: String {
+        switch self {
+        case .pathDrop: return "Pattern Fragments"
+        case .signalSplit: return "Energy Marks"
+        case .orbitControl: return "Stability Points"
+        }
+    }
+    
+    var levelCount: Int { 8 }
 }
 
 // MARK: - Level Progress
 struct LevelProgress: Codable, Identifiable {
-    var id: String { "\(trail.rawValue)-\(level)-\(difficulty.rawValue)" }
-    let trail: TrailType
+    var id: String { "\(gameType.rawValue)-\(level)-\(difficulty.rawValue)" }
+    let gameType: GameType
     let level: Int
     let difficulty: Difficulty
     var completed: Bool
-    var fragmentsEarned: Int
+    var rewardsEarned: Int
+    var accuracy: Double
     var timeSpent: TimeInterval
-    var bestScore: Int
 }
 
-// MARK: - Game Statistics
+// MARK: - Statistics
 struct GameStatistics: Codable {
-    var totalLevelsCompleted: Int = 0
-    var bestDifficultyAchieved: Difficulty = .easy
-    var totalFragments: Int = 0
-    var timeSpentPerTrail: [String: TimeInterval] = [:]
+    var totalSessionsPlayed: Int = 0
+    var levelsCompleted: Int = 0
+    var totalAccuracy: Double = 0
+    var accuracyCount: Int = 0
+    var totalTimeSpent: TimeInterval = 0
+    var patternFragments: Int = 0
+    var energyMarks: Int = 0
+    var stabilityPoints: Int = 0
     var levelsProgress: [LevelProgress] = []
     
-    mutating func updateBestDifficulty(_ difficulty: Difficulty) {
-        let difficultyOrder: [Difficulty] = [.easy, .normal, .hard]
-        if let currentIndex = difficultyOrder.firstIndex(of: bestDifficultyAchieved),
-           let newIndex = difficultyOrder.firstIndex(of: difficulty),
-           newIndex > currentIndex {
-            bestDifficultyAchieved = difficulty
+    var averageAccuracy: Double {
+        guard accuracyCount > 0 else { return 0 }
+        return totalAccuracy / Double(accuracyCount)
+    }
+    
+    var formattedTimeSpent: String {
+        let hours = Int(totalTimeSpent) / 3600
+        let minutes = (Int(totalTimeSpent) % 3600) / 60
+        if hours > 0 {
+            return "\(hours)h \(minutes)m"
         }
+        return "\(minutes)m"
     }
 }
 
@@ -102,6 +119,8 @@ class GameManager: ObservableObject {
         }
     }
     
+    @Published var dailyFocusGame: GameType = .pathDrop
+    
     private init() {
         self.hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
         
@@ -111,6 +130,10 @@ class GameManager: ObservableObject {
         } else {
             self.statistics = GameStatistics()
         }
+        
+        // Set daily focus based on day
+        let dayIndex = Calendar.current.component(.day, from: Date()) % GameType.allCases.count
+        self.dailyFocusGame = GameType.allCases[dayIndex]
     }
     
     private func saveStatistics() {
@@ -119,48 +142,51 @@ class GameManager: ObservableObject {
         }
     }
     
-    func completeLevel(trail: TrailType, level: Int, difficulty: Difficulty, fragments: Int, timeSpent: TimeInterval, score: Int) {
+    func completeLevel(gameType: GameType, level: Int, difficulty: Difficulty, rewards: Int, accuracy: Double, timeSpent: TimeInterval) {
         let progress = LevelProgress(
-            trail: trail,
+            gameType: gameType,
             level: level,
             difficulty: difficulty,
             completed: true,
-            fragmentsEarned: fragments,
-            timeSpent: timeSpent,
-            bestScore: score
+            rewardsEarned: rewards,
+            accuracy: accuracy,
+            timeSpent: timeSpent
         )
         
         // Check if level was already completed
         if let existingIndex = statistics.levelsProgress.firstIndex(where: {
-            $0.trail == trail && $0.level == level && $0.difficulty == difficulty
+            $0.gameType == gameType && $0.level == level && $0.difficulty == difficulty
         }) {
-            let existing = statistics.levelsProgress[existingIndex]
-            if score > existing.bestScore {
-                statistics.levelsProgress[existingIndex] = progress
-            }
-            // Don't add fragments if already completed at this difficulty
+            statistics.levelsProgress[existingIndex] = progress
         } else {
             statistics.levelsProgress.append(progress)
-            statistics.totalLevelsCompleted += 1
-            statistics.totalFragments += fragments
+            statistics.levelsCompleted += 1
+            
+            // Add rewards based on game type
+            switch gameType {
+            case .pathDrop:
+                statistics.patternFragments += rewards
+            case .signalSplit:
+                statistics.energyMarks += rewards
+            case .orbitControl:
+                statistics.stabilityPoints += rewards
+            }
         }
         
-        // Update time spent
-        let trailKey = trail.rawValue
-        statistics.timeSpentPerTrail[trailKey] = (statistics.timeSpentPerTrail[trailKey] ?? 0) + timeSpent
-        
-        // Update best difficulty
-        statistics.updateBestDifficulty(difficulty)
+        statistics.totalSessionsPlayed += 1
+        statistics.totalAccuracy += accuracy
+        statistics.accuracyCount += 1
+        statistics.totalTimeSpent += timeSpent
     }
     
-    func isLevelCompleted(trail: TrailType, level: Int, difficulty: Difficulty) -> Bool {
+    func isLevelCompleted(gameType: GameType, level: Int, difficulty: Difficulty) -> Bool {
         statistics.levelsProgress.contains {
-            $0.trail == trail && $0.level == level && $0.difficulty == difficulty && $0.completed
+            $0.gameType == gameType && $0.level == level && $0.difficulty == difficulty && $0.completed
         }
     }
     
-    func getCompletedLevelsCount(for trail: TrailType) -> Int {
-        statistics.levelsProgress.filter { $0.trail == trail && $0.completed }.count
+    func getCompletedLevelsCount(for gameType: GameType) -> Int {
+        statistics.levelsProgress.filter { $0.gameType == gameType && $0.completed }.count
     }
     
     func resetAllProgress() {
@@ -171,39 +197,61 @@ class GameManager: ObservableObject {
     }
 }
 
-// MARK: - Color Extension
+// MARK: - Color Extensions
 extension Color {
-    static let textPrimary = Color(red: 0.96, green: 0.96, blue: 0.96)
+    // Colors are auto-generated from Assets.xcassets
+    // Use .deepMidnightBlue, .brightCyan, .softMint, .darkSlate directly
+    
+    static let textPrimary = Color.white
+    static let textSecondary = Color.white.opacity(0.7)
 }
 
 // MARK: - View Extensions
 extension View {
-    func glowEffect(color: Color = .primaryAccent, radius: CGFloat = 10) -> some View {
+    func glowEffect(color: Color = .brightCyan, radius: CGFloat = 10) -> some View {
         self.shadow(color: color.opacity(0.6), radius: radius, x: 0, y: 0)
+    }
+    
+    func cardStyle(accentColor: Color = .brightCyan) -> some View {
+        self
+            .padding(20)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(Color.darkSlate)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20)
+                            .stroke(accentColor.opacity(0.3), lineWidth: 1)
+                    )
+            )
     }
     
     func primaryButtonStyle() -> some View {
         self
             .font(.system(size: 18, weight: .semibold, design: .rounded))
-            .foregroundColor(.textPrimary)
+            .foregroundColor(.deepMidnightBlue)
             .frame(maxWidth: .infinity)
             .frame(height: 56)
-            .background(Color.primaryAccent)
-            .cornerRadius(14)
-            .glowEffect(radius: 8)
+            .background(
+                LinearGradient(
+                    colors: [Color.brightCyan, Color.softMint],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .cornerRadius(16)
     }
     
     func secondaryButtonStyle() -> some View {
         self
             .font(.system(size: 16, weight: .medium, design: .rounded))
-            .foregroundColor(.textPrimary)
-            .padding(.horizontal, 24)
-            .padding(.vertical, 12)
-            .background(Color.secondaryAccent.opacity(0.3))
-            .cornerRadius(12)
+            .foregroundColor(.brightCyan)
+            .frame(maxWidth: .infinity)
+            .frame(height: 50)
+            .background(Color.darkSlate)
+            .cornerRadius(14)
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.secondaryAccent, lineWidth: 1)
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(Color.brightCyan.opacity(0.5), lineWidth: 1)
             )
     }
 }

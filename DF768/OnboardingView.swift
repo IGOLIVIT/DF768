@@ -14,50 +14,57 @@ struct OnboardingView: View {
     
     var body: some View {
         ZStack {
-            // Animated background
+            // Animated gradient background
             AnimatedGradientBackground()
             
-            // Floating shapes
-            FloatingShapesView()
+            // Falling particles
+            FallingParticlesView()
             
             VStack(spacing: 0) {
-                // Content
                 TabView(selection: $currentPage) {
                     OnboardingPageView(
-                        title: "Discover Hidden Trails",
-                        description: "Embark on a journey through abstract pathways filled with unique challenges and visual harmony.",
-                        iconName: "sparkles",
+                        title: "Master Your Path",
+                        description: "Every choice shapes the outcome. Guide objects through obstacles and discover the art of controlled trajectories.",
+                        iconName: "arrow.down.forward.and.arrow.up.backward",
                         shapeType: .hexagon
                     )
                     .tag(0)
                     
                     OnboardingPageView(
-                        title: "Master Each Challenge",
-                        description: "Progress through carefully crafted puzzles that evolve from simple interactions to layered experiences.",
-                        iconName: "puzzlepiece.fill",
+                        title: "Perfect Your Timing",
+                        description: "Precision matters. Split signals, release orbs, and make decisions at the exact right moment.",
+                        iconName: "point.topleft.down.to.point.bottomright.curvepath",
                         shapeType: .circle
                     )
                     .tag(1)
                     
                     OnboardingPageView(
-                        title: "Collect & Progress",
-                        description: "Earn luminous fragments as you complete trails. Track your achievements and unlock new difficulties.",
-                        iconName: "star.fill",
+                        title: "Track Your Growth",
+                        description: "Watch your skills evolve. Collect fragments, marks, and points as you progress through challenges.",
+                        iconName: "chart.line.uptrend.xyaxis",
                         shapeType: .diamond
                     )
                     .tag(2)
+                    
+                    OnboardingPageView(
+                        title: "Find Your Focus",
+                        description: "Engage your mind with elegant mini-games designed for calm concentration and satisfying mastery.",
+                        iconName: "brain.head.profile",
+                        shapeType: .hexagon
+                    )
+                    .tag(3)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .animation(.easeInOut(duration: 0.3), value: currentPage)
                 
-                // Page indicators and button
-                VStack(spacing: 32) {
-                    // Custom page indicator
-                    HStack(spacing: 12) {
-                        ForEach(0..<3, id: \.self) { index in
+                // Page indicators and navigation
+                VStack(spacing: 28) {
+                    // Custom page indicators
+                    HStack(spacing: 10) {
+                        ForEach(0..<4, id: \.self) { index in
                             Capsule()
-                                .fill(currentPage == index ? Color.primaryAccent : Color.textPrimary.opacity(0.3))
-                                .frame(width: currentPage == index ? 24 : 8, height: 8)
+                                .fill(currentPage == index ? Color.brightCyan : Color.textPrimary.opacity(0.3))
+                                .frame(width: currentPage == index ? 28 : 10, height: 10)
                                 .animation(.spring(response: 0.3), value: currentPage)
                         }
                     }
@@ -66,44 +73,38 @@ struct OnboardingView: View {
                     HStack(spacing: 16) {
                         if currentPage > 0 {
                             Button(action: {
-                                withAnimation {
-                                    currentPage -= 1
-                                }
+                                withAnimation { currentPage -= 1 }
                             }) {
-                                HStack {
+                                HStack(spacing: 6) {
                                     Image(systemName: "chevron.left")
                                     Text("Back")
                                 }
-                                .secondaryButtonStyle()
+                                .font(.system(size: 16, weight: .medium, design: .rounded))
+                                .foregroundColor(.textSecondary)
+                                .frame(width: 100, height: 50)
                             }
                             .transition(.opacity.combined(with: .move(edge: .leading)))
                         }
                         
                         Button(action: {
-                            if currentPage < 2 {
-                                withAnimation {
-                                    currentPage += 1
-                                }
+                            if currentPage < 3 {
+                                withAnimation { currentPage += 1 }
                             } else {
                                 completeOnboarding()
                             }
                         }) {
-                            HStack {
-                                Text(currentPage == 2 ? "Begin" : "Next")
-                                if currentPage < 2 {
-                                    Image(systemName: "chevron.right")
-                                } else {
-                                    Image(systemName: "arrow.right")
-                                }
+                            HStack(spacing: 8) {
+                                Text(currentPage == 3 ? "Start Exploring" : "Next")
+                                Image(systemName: currentPage == 3 ? "arrow.right" : "chevron.right")
                             }
                             .primaryButtonStyle()
                         }
-                        .scaleEffect(isAnimating ? 1.02 : 1.0)
-                        .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: isAnimating)
+                        .scaleEffect(isAnimating && currentPage == 3 ? 1.02 : 1.0)
+                        .animation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true), value: isAnimating)
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, 24)
                 }
-                .padding(.bottom, 60)
+                .padding(.bottom, 50)
             }
         }
         .onAppear {
@@ -135,58 +136,56 @@ struct OnboardingPageView: View {
                 OnboardingShape(type: shapeType)
                     .fill(
                         LinearGradient(
-                            colors: [Color.primaryAccent.opacity(0.3), Color.secondaryAccent.opacity(0.2)],
+                            colors: [Color.brightCyan.opacity(0.25), Color.softMint.opacity(0.15)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
                     .frame(width: 160, height: 160)
-                    .glowEffect(color: .primaryAccent, radius: 20)
+                    .glowEffect(color: .brightCyan, radius: 20)
                     .rotationEffect(.degrees(isVisible ? 360 : 0))
-                    .animation(.linear(duration: 30).repeatForever(autoreverses: false), value: isVisible)
+                    .animation(.linear(duration: 35).repeatForever(autoreverses: false), value: isVisible)
                 
                 OnboardingShape(type: shapeType)
-                    .stroke(Color.secondaryAccent, lineWidth: 2)
-                    .frame(width: 180, height: 180)
+                    .stroke(Color.softMint.opacity(0.5), lineWidth: 1.5)
+                    .frame(width: 185, height: 185)
                     .rotationEffect(.degrees(isVisible ? -360 : 0))
-                    .animation(.linear(duration: 40).repeatForever(autoreverses: false), value: isVisible)
+                    .animation(.linear(duration: 45).repeatForever(autoreverses: false), value: isVisible)
                 
                 Image(systemName: iconName)
                     .font(.system(size: 50, weight: .light))
                     .foregroundColor(.textPrimary)
-                    .glowEffect(color: .secondaryAccent, radius: 10)
+                    .glowEffect(color: .softMint, radius: 10)
             }
             .opacity(isVisible ? 1 : 0)
             .scaleEffect(isVisible ? 1 : 0.5)
             .animation(.spring(response: 0.6, dampingFraction: 0.7), value: isVisible)
             
-            VStack(spacing: 20) {
+            VStack(spacing: 18) {
                 Text(title)
                     .font(.system(size: 28, weight: .bold, design: .rounded))
                     .foregroundColor(.textPrimary)
                     .multilineTextAlignment(.center)
                     .opacity(isVisible ? 1 : 0)
                     .offset(y: isVisible ? 0 : 20)
-                    .animation(.easeOut(duration: 0.5).delay(0.2), value: isVisible)
+                    .animation(.easeOut(duration: 0.5).delay(0.15), value: isVisible)
                 
                 Text(description)
                     .font(.system(size: 17, weight: .regular, design: .rounded))
-                    .foregroundColor(.textPrimary.opacity(0.8))
+                    .foregroundColor(.textSecondary)
                     .multilineTextAlignment(.center)
-                    .lineSpacing(4)
-                    .padding(.horizontal, 32)
+                    .lineSpacing(5)
+                    .padding(.horizontal, 36)
                     .opacity(isVisible ? 1 : 0)
                     .offset(y: isVisible ? 0 : 20)
-                    .animation(.easeOut(duration: 0.5).delay(0.4), value: isVisible)
+                    .animation(.easeOut(duration: 0.5).delay(0.3), value: isVisible)
             }
             
             Spacer()
             Spacer()
         }
         .onAppear {
-            withAnimation {
-                isVisible = true
-            }
+            withAnimation { isVisible = true }
         }
         .onDisappear {
             isVisible = false
@@ -194,12 +193,11 @@ struct OnboardingPageView: View {
     }
 }
 
-// MARK: - Shape Type
+// MARK: - Shape Types
 enum OnboardingShapeType {
     case hexagon, circle, diamond
 }
 
-// MARK: - Custom Shape
 struct OnboardingShape: Shape {
     let type: OnboardingShapeType
     
@@ -253,96 +251,72 @@ struct AnimatedGradientBackground: View {
     var body: some View {
         LinearGradient(
             colors: [
-                Color.primaryBackground,
-                Color.primaryBackground.opacity(0.95),
-                Color.primaryAccent.opacity(0.15),
-                Color.primaryBackground
+                Color.deepMidnightBlue,
+                Color.deepMidnightBlue.opacity(0.95),
+                Color.brightCyan.opacity(0.12),
+                Color.deepMidnightBlue
             ],
             startPoint: animateGradient ? .topLeading : .bottomLeading,
             endPoint: animateGradient ? .bottomTrailing : .topTrailing
         )
         .ignoresSafeArea()
         .onAppear {
-            withAnimation(.easeInOut(duration: 5).repeatForever(autoreverses: true)) {
+            withAnimation(.easeInOut(duration: 6).repeatForever(autoreverses: true)) {
                 animateGradient.toggle()
             }
         }
     }
 }
 
-// MARK: - Floating Shapes View
-struct FloatingShapesView: View {
-    @State private var animate = false
+// MARK: - Falling Particles View
+struct FallingParticlesView: View {
+    @State private var particles: [AnimatedParticle] = []
     
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                ForEach(0..<8, id: \.self) { index in
-                    FloatingShape(index: index, screenSize: geometry.size)
+                ForEach(particles) { particle in
+                    Circle()
+                        .fill(particle.color)
+                        .frame(width: particle.size, height: particle.size)
+                        .position(particle.position)
+                        .opacity(particle.opacity)
                 }
             }
         }
         .ignoresSafeArea()
+        .onAppear {
+            generateParticles()
+        }
+    }
+    
+    private func generateParticles() {
+        let screenWidth = UIScreen.main.bounds.width
+        let screenHeight = UIScreen.main.bounds.height
+        
+        particles = (0..<20).map { index in
+            AnimatedParticle(
+                position: CGPoint(
+                    x: CGFloat.random(in: 0...screenWidth),
+                    y: CGFloat.random(in: 0...screenHeight)
+                ),
+                size: CGFloat.random(in: 2...7),
+                color: index % 2 == 0 ? Color.brightCyan.opacity(0.25) : Color.softMint.opacity(0.2),
+                opacity: Double.random(in: 0.15...0.4)
+            )
+        }
     }
 }
 
-struct FloatingShape: View {
-    let index: Int
-    let screenSize: CGSize
-    
-    @State private var offset: CGSize = .zero
-    @State private var opacity: Double = 0
-    @State private var rotation: Double = 0
-    
-    private var shapeSize: CGFloat {
-        CGFloat.random(in: 20...60)
-    }
-    
-    private var initialPosition: CGPoint {
-        CGPoint(
-            x: CGFloat.random(in: 0...screenSize.width),
-            y: CGFloat.random(in: 0...screenSize.height)
-        )
-    }
-    
-    var body: some View {
-        Group {
-            if index % 3 == 0 {
-                Circle()
-                    .fill(Color.primaryAccent.opacity(0.1))
-            } else if index % 3 == 1 {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.secondaryAccent.opacity(0.08))
-            } else {
-                OnboardingShape(type: .hexagon)
-                    .fill(Color.primaryAccent.opacity(0.06))
-            }
-        }
-        .frame(width: shapeSize + CGFloat(index * 5), height: shapeSize + CGFloat(index * 5))
-        .position(x: screenSize.width * CGFloat(index % 4 + 1) / 5, 
-                  y: screenSize.height * CGFloat(index / 2 + 1) / 5)
-        .offset(offset)
-        .opacity(opacity)
-        .rotationEffect(.degrees(rotation))
-        .onAppear {
-            withAnimation(.easeInOut(duration: Double.random(in: 3...6)).repeatForever(autoreverses: true)) {
-                offset = CGSize(
-                    width: CGFloat.random(in: -30...30),
-                    height: CGFloat.random(in: -40...40)
-                )
-            }
-            withAnimation(.easeIn(duration: 1)) {
-                opacity = Double.random(in: 0.3...0.6)
-            }
-            withAnimation(.linear(duration: Double.random(in: 20...40)).repeatForever(autoreverses: false)) {
-                rotation = 360
-            }
-        }
-    }
+struct AnimatedParticle: Identifiable {
+    let id = UUID()
+    var position: CGPoint
+    let size: CGFloat
+    let color: Color
+    let opacity: Double
 }
 
 #Preview {
     OnboardingView(onComplete: {})
 }
-
 
