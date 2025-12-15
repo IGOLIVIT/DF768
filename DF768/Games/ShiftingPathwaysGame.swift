@@ -21,6 +21,7 @@ struct ShiftingPathwaysGame: View {
     @State private var gameEnded = false
     @State private var shuffleTimer: Timer?
     @State private var gameTimer: Timer?
+    @State private var countdownTimer: Timer?
     @State private var showingCountdown = true
     @State private var countdownValue = 3
     @State private var startTime: Date?
@@ -180,10 +181,11 @@ struct ShiftingPathwaysGame: View {
     }
     
     private func startCountdown() {
-        Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { timer in
+        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { timer in
             countdownValue -= 1
             if countdownValue <= 0 {
                 timer.invalidate()
+                countdownTimer = nil
                 showingCountdown = false
                 startGame()
             }
@@ -242,6 +244,8 @@ struct ShiftingPathwaysGame: View {
     }
     
     private func cleanupTimers() {
+        countdownTimer?.invalidate()
+        countdownTimer = nil
         shuffleTimer?.invalidate()
         shuffleTimer = nil
         gameTimer?.invalidate()

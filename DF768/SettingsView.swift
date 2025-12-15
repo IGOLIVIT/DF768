@@ -7,7 +7,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(\.presentationMode) private var presentationMode
-    @StateObject private var gameManager = GameManager.shared
+    @ObservedObject private var gameManager = GameManager.shared
     @State private var showResetConfirmation = false
     @State private var showStatistics = false
     @State private var isAnimating = false

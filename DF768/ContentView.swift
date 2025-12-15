@@ -6,7 +6,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var gameManager = GameManager.shared
+    @ObservedObject private var gameManager = GameManager.shared
     @State private var showOnboarding: Bool = false
     @State private var isInitialized = false
     

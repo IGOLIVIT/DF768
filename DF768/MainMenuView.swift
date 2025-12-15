@@ -6,7 +6,7 @@
 import SwiftUI
 
 struct MainMenuView: View {
-    @StateObject private var gameManager = GameManager.shared
+    @ObservedObject private var gameManager = GameManager.shared
     @State private var isAnimating = false
     
     var body: some View {
@@ -246,18 +246,15 @@ struct MenuButtonStyle: ButtonStyle {
     }
 }
 
-// MARK: - Animated Menu Background
+// MARK: - Static Menu Background
 struct AnimatedMenuBackground: View {
-    @State private var phase1: CGFloat = 0
-    @State private var phase2: CGFloat = 0
-    
     var body: some View {
         ZStack {
             // Base gradient
             Color.primaryBackground
                 .ignoresSafeArea()
             
-            // Animated gradient orbs
+            // Static gradient orbs
             GeometryReader { geometry in
                 ZStack {
                     // Primary orb
@@ -271,7 +268,6 @@ struct AnimatedMenuBackground: View {
                             )
                         )
                         .frame(width: 400, height: 400)
-                        .offset(x: sin(phase1) * 50, y: cos(phase1) * 30)
                         .position(x: geometry.size.width * 0.3, y: geometry.size.height * 0.2)
                     
                     // Secondary orb
@@ -285,7 +281,6 @@ struct AnimatedMenuBackground: View {
                             )
                         )
                         .frame(width: 350, height: 350)
-                        .offset(x: cos(phase2) * 40, y: sin(phase2) * 50)
                         .position(x: geometry.size.width * 0.7, y: geometry.size.height * 0.7)
                     
                     // Third orb
@@ -299,19 +294,10 @@ struct AnimatedMenuBackground: View {
                             )
                         )
                         .frame(width: 300, height: 300)
-                        .offset(x: sin(phase2 + 1) * 30, y: cos(phase1 + 2) * 40)
                         .position(x: geometry.size.width * 0.5, y: geometry.size.height * 0.5)
                 }
             }
             .ignoresSafeArea()
-        }
-        .onAppear {
-            withAnimation(.easeInOut(duration: 8).repeatForever(autoreverses: true)) {
-                phase1 = .pi * 2
-            }
-            withAnimation(.easeInOut(duration: 10).repeatForever(autoreverses: true)) {
-                phase2 = .pi * 2
-            }
         }
     }
 }

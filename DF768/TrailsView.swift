@@ -7,7 +7,7 @@ import SwiftUI
 
 struct TrailsView: View {
     @Environment(\.presentationMode) private var presentationMode
-    @StateObject private var gameManager = GameManager.shared
+    @ObservedObject private var gameManager = GameManager.shared
     @State private var selectedTrail: TrailType?
     @State private var isAnimating = false
     @State private var navigateToTrail = false
@@ -252,7 +252,7 @@ struct TrailDetailView: View {
     let trail: TrailType
     
     @Environment(\.presentationMode) private var presentationMode
-    @StateObject private var gameManager = GameManager.shared
+    @ObservedObject private var gameManager = GameManager.shared
     @State private var selectedDifficulty: Difficulty = .easy
     @State private var selectedLevel: Int? = nil
     @State private var isAnimating = false

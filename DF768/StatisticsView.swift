@@ -7,7 +7,7 @@ import SwiftUI
 
 struct StatisticsView: View {
     @Environment(\.presentationMode) private var presentationMode
-    @StateObject private var gameManager = GameManager.shared
+    @ObservedObject private var gameManager = GameManager.shared
     @State private var isAnimating = false
     
     var body: some View {

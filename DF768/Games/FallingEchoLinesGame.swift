@@ -22,6 +22,7 @@ struct FallingEchoLinesGame: View {
     @State private var won = false
     @State private var showingCountdown = true
     @State private var countdownValue = 3
+    @State private var countdownTimer: Timer?
     @State private var startTime: Date?
     @State private var spawnTimer: Timer?
     @State private var gameTimer: Timer?
@@ -199,10 +200,11 @@ struct FallingEchoLinesGame: View {
     }
     
     private func startCountdown() {
-        Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { timer in
+        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { timer in
             countdownValue -= 1
             if countdownValue <= 0 {
                 timer.invalidate()
+                countdownTimer = nil
                 showingCountdown = false
                 startTime = Date()
                 startGame()
@@ -324,6 +326,8 @@ struct FallingEchoLinesGame: View {
     }
     
     private func cleanupTimers() {
+        countdownTimer?.invalidate()
+        countdownTimer = nil
         spawnTimer?.invalidate()
         spawnTimer = nil
         gameTimer?.invalidate()

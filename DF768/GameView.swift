@@ -11,7 +11,7 @@ struct GameView: View {
     let difficulty: Difficulty
     
     @Environment(\.presentationMode) private var presentationMode
-    @StateObject private var gameManager = GameManager.shared
+    @ObservedObject private var gameManager = GameManager.shared
     @State private var showingPauseMenu = false
     @State private var gameCompleted = false
     

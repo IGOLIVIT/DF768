@@ -6,7 +6,7 @@
 import SwiftUI
 
 struct OnboardingView: View {
-    @StateObject private var gameManager = GameManager.shared
+    @ObservedObject private var gameManager = GameManager.shared
     @State private var currentPage = 0
     @State private var isAnimating = false
     

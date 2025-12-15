@@ -28,6 +28,7 @@ struct PulseOfReflectionsGame: View {
     @State private var won = false
     @State private var showingCountdown = true
     @State private var countdownValue = 3
+    @State private var countdownTimer: Timer?
     @State private var startTime: Date?
     
     private var nodeCount: Int {
@@ -85,6 +86,14 @@ struct PulseOfReflectionsGame: View {
             setupGame()
             startCountdown()
         }
+        .onDisappear {
+            cleanupTimers()
+        }
+    }
+    
+    private func cleanupTimers() {
+        countdownTimer?.invalidate()
+        countdownTimer = nil
     }
     
     private var backgroundLayer: some View {
@@ -243,10 +252,11 @@ struct PulseOfReflectionsGame: View {
     }
     
     private func startCountdown() {
-        Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { timer in
+        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { timer in
             countdownValue -= 1
             if countdownValue <= 0 {
                 timer.invalidate()
+                countdownTimer = nil
                 showingCountdown = false
                 startTime = Date()
                 startRound()
